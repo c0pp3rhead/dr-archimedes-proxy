@@ -6,70 +6,61 @@ import { GoogleGenAI } from '@google/genai';
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 3000;
-
-// Middleware to parse incoming JSON payloads
 app.use(cors());
-app.use(express.json({ limit: '50mb' })); // We need a high limit for Base64 image strings
+app.use(express.json({ limit: '50mb' }));
 
-// Initialize the Gemini SDK
-const ai = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY
-});
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
+// The existing grading endpoint
 app.post('/grade', async (req, res) => {
     try {
-        let { imageBase64 } = req.body;
+        const { imageBase64 } = req.body;
+        
+        const prompt = `You are Dr. Archimedes, a strict but brilliant Alchemist owl grading university chemistry coursework. 
+        Analyze the handwritten work in this image. 
+        If the work is correct, start your response exactly with "[GRADE: PASS]".
+        If the work is incorrect or missing, start your response exactly with "[GRADE: FAIL]".
+        Provide a brief, step-by-step LaTeX resolution to explain why.`;
 
-        if (!imageBase64) {
-            return res.status(400).json({ error: "No image provided." });
-        }
-
-        console.log("Hoot! Dr. Archimedes received a new submission. Analyzing...");
-
-        // SANITIZATION: Ensure it is just the raw Base64 string
-        if (imageBase64.includes("base64,")) {
-            imageBase64 = imageBase64.split("base64,")[1];
-        }
-
-        const systemPrompt = `You are Dr. Archimedes, the Alchemist Owl. You reside in an overgrown, ancient biolaboratory. You are a strict but encouraging mentor. The user will upload an image of handwritten chemistry work. 
-        CURRENT MODULE: Level 0 - Pre-Lab (Stoichiometry, Aqueous Reactions, Molarity).
-        YOUR TASK:
-        1. Analyze the handwritten user image.
-        2. Verify the math, balanced chemical equations, and units.
-        3. Output a STRICT grading token on the very first line: Either [GRADE: PASS] or [GRADE: FAIL].
-        4. Provide a step-by-step resolution written in the persona of Dr. Archimedes.
-        5. You MUST use LaTeX wrapped in $$ with the \\ce{} command for all chemical equations so the frontend mhchem renderer can parse them.`;
-
-        // NEW SDK FORMATTING: The part object must be structured exactly like this
-        const imagePart = {
-            inlineData: {
-                data: imageBase64,
-                mimeType: "image/jpeg"
-            }
-        };
-
-        // NEW SDK FORMATTING: System instructions are now passed separately
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
-            contents: [imagePart, "Analyze this image according to your instructions."],
-            config: {
-                systemInstruction: systemPrompt,
-                temperature: 0.2 // Keep the owl focused and analytical
-            }
+            contents: [
+                { inlineData: { data: imageBase64, mimeType: 'image/jpeg' } },
+                prompt
+            ]
         });
 
-        const aiText = response.text;
-        
-        console.log("Analysis complete. Sending resolution back to Android.");
-        res.json({ resolution: aiText });
-
+        res.json({ resolution: response.text });
     } catch (error) {
-        console.error("The crucible shattered! Error details:", error.message || error);
-        res.status(500).json({ error: "Failed to process image." });
+        console.error(error);
+        res.status(500).json({ error: 'Failed to communicate with Dr. Archimedes' });
     }
 });
 
-app.listen(port, () => {
-    console.log(`Dr. Archimedes Proxy Server is awake and listening on port ${port}`);
+// NEW: The dynamic exercise generation endpoint
+app.post('/generate', async (req, res) => {
+    try {
+        const { moduleName } = req.body;
+        
+        const prompt = `You are Dr. Archimedes, a strict but brilliant Alchemist owl and Chemistry professor.
+        Generate ONE unique, challenging chemistry exercise for the university module: ${moduleName}.
+        Do NOT solve the problem. Just provide the prompt for the student to solve.
+        Use LaTeX for any chemical formulas, math, or variables, wrapped securely in $$ (e.g., $$\\ce{H2O}$$).
+        Keep the prompt under 3 sentences. Always start your response with "Welcome to the Biolaboratory!"`;
+
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt
+        });
+
+        res.json({ exercise: response.text });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to generate exercise' });
+    }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Dr. Archimedes Proxy Server is awake and listening on port ${PORT}`);
 });
