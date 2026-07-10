@@ -48,8 +48,8 @@ app.post('/generate', async (req, res) => {
         
         CRITICAL FORMATTING RULES:
         - NEVER use markdown backticks (\`).
-        - Use \\ce{...} for ALL chemical formulas (e.g., \\ce{CH3COOH}, \\ce{Mg(OH)2}).
-        - Use a single $ for inline math and variables (e.g., $K_{sp} = 5.6 \\times 10^{-12}$).
+        - ALWAYS wrap chemical formulas inside inline math delimiters like this: $\ce{CH3COOH}$ or $\ce{Mg(OH)2}$.
+        - Use a single $ for inline math and variables (e.g., $K_{sp} = 5.6 \times 10^{-12}$).
         - Use double $$ for standalone display equations.
         - NEVER concatenate words with formulas. Keep standard spacing.
         
