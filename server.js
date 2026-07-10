@@ -47,10 +47,11 @@ app.post('/generate', async (req, res) => {
         Do NOT solve the problem. Just provide the prompt for the student to solve.
         
         CRITICAL FORMATTING RULES:
-        - NEVER use markdown backticks (\`) for math or text.
-        - ALWAYS use \\( and \\) for inline math (e.g., \\(\\ce{H2O}\\) or \\( \\Delta H^{\\circ} \\)).
-        - ALWAYS use $$ and $$ for display math (e.g., $$\\ce{C4H10 + O2 -> CO2 + H2O}$$).
-        - Ensure all units are properly formatted outside of the math blocks or using standard text spacing.
+        - NEVER use markdown backticks (\`).
+        - Use \\ce{...} for ALL chemical formulas (e.g., \\ce{CH3COOH}, \\ce{Mg(OH)2}).
+        - Use a single $ for inline math and variables (e.g., $K_{sp} = 5.6 \\times 10^{-12}$).
+        - Use double $$ for standalone display equations.
+        - NEVER concatenate words with formulas. Keep standard spacing.
         
         Keep the prompt under 3 sentences. Always start your response with "Welcome to the Biolaboratory!"`;
 
@@ -64,4 +65,10 @@ app.post('/generate', async (req, res) => {
         console.error(error);
         res.status(500).json({ error: 'Failed to generate exercise' });
     }
+});
+// ... [your /generate block ends here]
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Dr. Archimedes Proxy Server is awake and listening on port ${PORT}`);
 });
