@@ -14,7 +14,8 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 // The existing grading endpoint
 app.post('/grade', async (req, res) => {
     try {
-        const { imagesBase64 } = req.body; // Now expects an array from Android
+        // FIXED: Now correctly looking for the "images" key from Android
+        const { images } = req.body; 
         
         const prompt = `You are Dr. Archimedes, a strict but brilliant Alchemist owl grading university chemistry coursework. 
         Analyze the handwritten work across these images in sequential order. 
@@ -23,7 +24,7 @@ app.post('/grade', async (req, res) => {
         Provide a brief, step-by-step LaTeX resolution to explain why.`;
 
         // Map the array of base64 strings into Gemini's expected inlineData format
-        const imageParts = imagesBase64.map(base64 => ({
+        const imageParts = images.map(base64 => ({
             inlineData: { data: base64, mimeType: 'image/jpeg' }
         }));
         
